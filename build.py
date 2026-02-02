@@ -16,10 +16,10 @@ def build():
     """ビルド実行"""
     system = platform.system()
 
-    # 共通オプション
+    # 共通オプション（python -m PyInstaller を使用）
     if system == 'Darwin':  # macOS
         options = [
-            'pyinstaller',
+            sys.executable, '-m', 'PyInstaller',
             '--onedir',            # ディレクトリにまとめる（macOS .app用）
             '--windowed',          # コンソールウィンドウを表示しない
             '--name=FureaiNet',    # 出力ファイル名
@@ -28,7 +28,7 @@ def build():
         ]
     elif system == 'Windows':
         options = [
-            'pyinstaller',
+            sys.executable, '-m', 'PyInstaller',
             '--onefile',           # Windows用は1ファイル
             '--windowed',
             '--name=FureaiNet',
@@ -36,7 +36,7 @@ def build():
         ]
     else:
         options = [
-            'pyinstaller',
+            sys.executable, '-m', 'PyInstaller',
             '--onefile',
             '--name=FureaiNet',
             '--add-data=fureai_auto.py:.',
