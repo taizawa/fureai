@@ -1,0 +1,16 @@
+# Build
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Config (contains passwords)
+fureai_config.json
+fureai_accounts.json
+accounts.csv
