@@ -33,6 +33,13 @@ def build():
             '--windowed',
             '--name=FureaiNet',
             '--add-data=fureai_auto.py;.',
+            '--hidden-import=PyQt5',
+            '--hidden-import=PyQt5.QtCore',
+            '--hidden-import=PyQt5.QtGui',
+            '--hidden-import=PyQt5.QtWidgets',
+            '--hidden-import=requests',
+            '--hidden-import=bs4',
+            '--collect-all=PyQt5',
         ]
     else:
         options = [
