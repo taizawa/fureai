@@ -254,6 +254,16 @@ class FureaiNet:
         encoded_data = {k: v.encode('shift_jis') if isinstance(v, str) else v for k, v in data.items()}
         response = self.session.post(action, data=encoded_data)
         self.soup = self._get_soup(response)
+
+        # エラーチェック（空きがない場合など）
+        page_text = self.soup.get_text()
+        if 'エラー' in page_text:
+            error_msg = "確認画面でエラー"
+            if '空きがありません' in page_text:
+                error_msg = "空きがありません（当選可能数が0）"
+            self._set_error(error_msg)
+            return False
+
         print("  → 確認画面へ進みました")
         return True
 
