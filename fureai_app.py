@@ -961,12 +961,33 @@ class FureaiApp(QMainWindow):
                         results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - {error_detail}")
 
             result_msg = "実行結果:\n\n" + "\n".join(results)
-            QMessageBox.information(self, "完了", result_msg)
+            self._show_result_dialog("完了", result_msg)
             self.status_label.setText("完了")
 
         except Exception as e:
             QMessageBox.critical(self, "エラー", f"実行エラー: {e}")
             self.status_label.setText(f"エラー: {e}")
+
+    def _show_result_dialog(self, title: str, message: str):
+        """スクロール可能な結果ダイアログを表示"""
+        from PyQt5.QtWidgets import QTextEdit
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle(title)
+        dialog.setMinimumSize(500, 400)
+
+        layout = QVBoxLayout(dialog)
+
+        text_edit = QTextEdit()
+        text_edit.setPlainText(message)
+        text_edit.setReadOnly(True)
+        layout.addWidget(text_edit)
+
+        ok_btn = QPushButton("OK")
+        ok_btn.clicked.connect(dialog.accept)
+        layout.addWidget(ok_btn)
+
+        dialog.exec_()
 
 
 def main():
