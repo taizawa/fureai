@@ -919,8 +919,22 @@ class FureaiApp(QMainWindow):
                         if test_mode:
                             results.append(f"✓ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - OK")
                         else:
-                            # TODO: 実際の申込処理
-                            results.append(f"✓ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - 申込完了")
+                            # 申込フォーム入力
+                            fureai.fill_application_form(
+                                start_time=app['start_time'],
+                                end_time=app['end_time'],
+                                purpose=config['common']['purpose'],
+                                people_num=int(config['common']['people_num']),
+                                event_name=config['common']['event_name']
+                            )
+                            # 申込実行
+                            result = fureai.submit_application()
+                            if result == 'success':
+                                results.append(f"✓ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - 申込完了")
+                            elif result == 'error':
+                                results.append(f"△ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - スキップ（上限等）")
+                            else:
+                                results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - エラー")
 
                     except Exception as e:
                         results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - {e}")

@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
-川崎市ふれあいネット自動入力プログラム
+川崎市ふれあいネット自動申込プログラム
 https://www.fureai-net.city.kawasaki.jp/sp/
-
-※申し込みボタンは押さない（確認画面まで）
 """
 
 import requests
@@ -194,7 +192,7 @@ class FureaiNet:
                                purpose: str = "少年サッカー（小・中学生）",
                                people_num: int = 50,
                                event_name: str = "試合"):
-        """申込フォームを入力して確認画面まで進む（申し込みはしない）"""
+        """申込フォームを入力して確認画面まで進む"""
         print(f"[8] 申込フォーム入力")
         print(f"  → 時間: {start_time} - {end_time}")
         print(f"  → 目的: {purpose}")
@@ -206,6 +204,9 @@ class FureaiNet:
         if not form:
             print("  → フォームが見つかりません")
             return False
+
+        action = urljoin(self.current_url, form.get('action', ''))
+        hidden = self._get_hidden_fields(self.soup)
 
         # selectの選択肢を確認してvalue取得
         stime_value = start_time
@@ -230,17 +231,79 @@ class FureaiNet:
         print(f"  → 時間値: {stime_value} - {etime_value}")
         print(f"  → 目的値: {purpose_value}")
 
-        # フォームの内容を表示（送信はしない）
-        print()
-        print("=" * 50)
-        print("【確認】現在の画面")
-        print("=" * 50)
-        print(self.soup.get_text()[:2000])
-        print()
-        print("=" * 50)
-        print("※申し込みボタンは押していません")
-        print("=" * 50)
+        # フォームデータを構築
+        data = {
+            'selectStime': stime_value,
+            'selectEtime': etime_value,
+            'appliedPpsCd': purpose_value or '',
+            'appliedPeopleNum': str(people_num),
+            'eventName': event_name,
+            'groupName': '',
+            **hidden
+        }
+
+        # Shift-JISでエンコードして送信
+        encoded_data = {k: v.encode('shift_jis') if isinstance(v, str) else v for k, v in data.items()}
+        response = self.session.post(action, data=encoded_data)
+        self.soup = self._get_soup(response)
+        print("  → 確認画面へ進みました")
         return True
+
+    def submit_application(self):
+        """申し込みを実行
+
+        Returns:
+            'success': 申し込み成功
+            'error': スキップ可能なエラー（上限到達など）
+            'fatal': 致命的なエラー（フォームが見つからないなど）
+        """
+        print("[9] 申し込み実行")
+
+        form = self.soup.find('form')
+        if not form:
+            print("  → フォームが見つかりません")
+            return 'fatal'
+
+        action = urljoin(self.current_url, form.get('action', ''))
+        hidden = self._get_hidden_fields(self.soup)
+
+        # 申し込みボタンを探す
+        submit_btn = None
+        for inp in form.find_all('input', type='submit'):
+            value = inp.get('value', '')
+            if '申込' in value or '確定' in value or '登録' in value or '決定' in value:
+                submit_btn = inp
+                break
+
+        if not submit_btn:
+            # submitボタンがなければ、通常のボタンを探す
+            for btn in form.find_all('button'):
+                text = btn.get_text(strip=True)
+                if '申込' in text or '確定' in text or '登録' in text or '決定' in text:
+                    submit_btn = btn
+                    break
+
+        data = {**hidden}
+        if submit_btn and submit_btn.get('name') and submit_btn.get('name') != 'None':
+            data[submit_btn.get('name')] = submit_btn.get('value', '')
+
+        # 申し込みを送信
+        response = self.session.post(action, data=data)
+        self.soup = self._get_soup(response)
+
+        # 結果を確認
+        page_text = self.soup.get_text()
+        if 'エラー' in page_text:
+            print("  → 申し込みエラー（スキップ）")
+            # エラー内容を簡潔に表示
+            error_lines = [line.strip() for line in page_text.split('\n') if 'エラー' in line or '上限' in line or '件数' in line]
+            if error_lines:
+                for line in error_lines[:3]:
+                    print(f"    {line}")
+            return 'error'
+
+        print("  → 申し込み完了")
+        return 'success'
 
     def get_availability(self):
         """現在の画面から空き状況を取得"""
@@ -379,14 +442,29 @@ def main():
         fureai.show_current_page()
         return
 
-    # 8. 時間・目的・人数を入力（申し込みボタンは押さない）
-    fureai.fill_application_form(
+    # 8. 時間・目的・人数を入力
+    if not fureai.fill_application_form(
         start_time=TIME['start'],
         end_time=TIME['end'],
         purpose='少年サッカー（小・中学生）',
         people_num=50,
         event_name='試合'
-    )
+    ):
+        fureai.show_current_page()
+        return
+
+    # 9. 申し込み実行
+    result = fureai.submit_application()
+    if result == 'fatal':
+        fureai.show_current_page()
+        return
+    elif result == 'error':
+        print("  → エラーのためこの申し込みはスキップしました")
+
+    print()
+    print("=" * 50)
+    print("申し込み処理が完了しました")
+    print("=" * 50)
 
 
 if __name__ == "__main__":
