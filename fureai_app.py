@@ -909,24 +909,43 @@ class FureaiApp(QMainWindow):
                     facility_data = FACILITIES.get(app['facility'], {})
 
                     try:
+                        # 各ステップでエラーチェック
                         fureai.go_to_lottery_by_area()
-                        fureai.select_area(facility_data.get('area', ''))
-                        fureai.select_group(facility_data.get('group', ''))
-                        fureai.select_place(facility_data.get('place', ''))
-                        fureai.select_facility(facility_data.get('facility', app['facility']))
-                        fureai.select_date(int(app['month']), int(app['day']))
+
+                        if not fureai.select_area(facility_data.get('area', '')):
+                            results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - 地域選択エラー: {fureai.last_error[:80]}")
+                            continue
+
+                        if not fureai.select_group(facility_data.get('group', '')):
+                            results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - グループ選択エラー: {fureai.last_error[:80]}")
+                            continue
+
+                        if not fureai.select_place(facility_data.get('place', '')):
+                            results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - 館選択エラー: {fureai.last_error[:80]}")
+                            continue
+
+                        if not fureai.select_facility(facility_data.get('facility', app['facility'])):
+                            results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - 施設選択エラー: {fureai.last_error[:80]}")
+                            continue
+
+                        if not fureai.select_date(int(app['month']), int(app['day'])):
+                            results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - 日付選択エラー: {fureai.last_error[:80]}")
+                            continue
 
                         if test_mode:
                             results.append(f"✓ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - OK")
                         else:
                             # 申込フォーム入力
-                            fureai.fill_application_form(
+                            if not fureai.fill_application_form(
                                 start_time=app['start_time'],
                                 end_time=app['end_time'],
                                 purpose=config['common']['purpose'],
                                 people_num=int(config['common']['people_num']),
                                 event_name=config['common']['event_name']
-                            )
+                            ):
+                                results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - フォーム入力エラー: {fureai.last_error[:80]}")
+                                continue
+
                             # 申込実行
                             result = fureai.submit_application()
                             if result == 'success':
