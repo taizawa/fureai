@@ -20,6 +20,8 @@ class FureaiNet:
         })
         self.current_url = BASE_URL
         self.last_error = ""  # エラー詳細を保存
+        self._user_id = None  # 再ログイン用
+        self._password = None
 
     def _set_error(self, message):
         """エラー情報を設定"""
@@ -95,6 +97,11 @@ class FureaiNet:
     def login(self, user_id: str, password: str) -> bool:
         """ログイン"""
         print("[1] ログイン")
+
+        # 再ログイン用に保存
+        self._user_id = user_id
+        self._password = password
+
         response = self.session.get(BASE_URL)
         soup = self._get_soup(response)
 
@@ -130,6 +137,16 @@ class FureaiNet:
         url = urljoin(BASE_URL, '/sp/lotPTransLotAcceptAreaAction.do?displayNo=papae1000&lotSetupItem=3')
         response = self.session.get(url)
         self.soup = self._get_soup(response)
+
+        # エラー画面（セッション切れ等）を検出したら再ログイン
+        if 'エラー' in self.soup.get_text() or '認証' in self.soup.get_text():
+            print("  → セッション切れ、再ログイン中...")
+            if self._user_id and self._password:
+                self.login(self._user_id, self._password)
+                # 再度地域選択画面にアクセス
+                response = self.session.get(url)
+                self.soup = self._get_soup(response)
+
         print("  → 地域選択画面へ移動")
         return True
 
@@ -350,12 +367,10 @@ class FureaiNet:
 
     def _go_to_top(self):
         """メインメニュー（TOP画面）に戻る"""
-        # 「もどる」または「TOP画面へ」リンクを探す
-        response = self._click_link(self.soup, 'TOP画面へ')
-        if not response:
-            response = self._click_link(self.soup, 'もどる')
-        if response:
-            self.soup = self._get_soup(response)
+        # 直接メインメニューURLにアクセス（「もどる」は別画面に戻ることがあるため）
+        url = urljoin(BASE_URL, '/sp/rsvPTransMainMenuAction.do')
+        response = self.session.get(url)
+        self.soup = self._get_soup(response)
 
     def get_availability(self):
         """現在の画面から空き状況を取得"""
