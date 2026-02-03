@@ -303,7 +303,30 @@ class FureaiNet:
             return 'error'
 
         print("  → 申し込み完了")
+
+        # メール送信確認画面を処理（連続申し込みのため）
+        self._handle_mail_confirmation()
+
         return 'success'
+
+    def _handle_mail_confirmation(self):
+        """メール送信確認画面を処理してTOPに戻る"""
+        page_text = self.soup.get_text()
+        if 'メール送信確認' not in page_text:
+            return
+
+        # 「はい」を押してメール送信
+        form = self.soup.find('form')
+        if form:
+            action = urljoin(self.current_url, form.get('action', ''))
+            hidden = self._get_hidden_fields(self.soup)
+            response = self.session.post(action, data=hidden)
+            self.soup = self._get_soup(response)
+
+        # 「TOP画面へ」をクリックしてメインメニューに戻る
+        response = self._click_link(self.soup, 'TOP画面へ')
+        if response:
+            self.soup = self._get_soup(response)
 
     def get_availability(self):
         """現在の画面から空き状況を取得"""
