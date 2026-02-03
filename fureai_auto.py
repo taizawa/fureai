@@ -94,13 +94,14 @@ class FureaiNet:
                 return self.session.get(url)
         return None
 
-    def login(self, user_id: str, password: str) -> bool:
+    def login(self, user_id: str, password: str, security_no: str = '') -> bool:
         """ログイン"""
         print("[1] ログイン")
 
         # 再ログイン用に保存
         self._user_id = user_id
         self._password = password
+        self._security_no = security_no
 
         response = self.session.get(BASE_URL)
         soup = self._get_soup(response)
@@ -112,7 +113,7 @@ class FureaiNet:
         response = self.session.post(action_url, data={
             'userId': user_id,
             'password': password,
-            'securityNo': '',
+            'securityNo': security_no,
             'login': '認証',
             **hidden
         })
@@ -142,7 +143,7 @@ class FureaiNet:
         if 'エラー' in self.soup.get_text() or '認証' in self.soup.get_text():
             print("  → セッション切れ、再ログイン中...")
             if self._user_id and self._password:
-                self.login(self._user_id, self._password)
+                self.login(self._user_id, self._password, self._security_no or '')
                 # 再度地域選択画面にアクセス
                 response = self.session.get(url)
                 self.soup = self._get_soup(response)

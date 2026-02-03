@@ -761,7 +761,7 @@ class FureaiApp(QMainWindow):
 
             fureai = FureaiNet()
 
-            if not fureai.login(acc['id'], acc['password']):
+            if not fureai.login(acc['id'], acc['password'], acc.get('security', '')):
                 QMessageBox.critical(self, "エラー", "ログインに失敗しました")
                 self.status_label.setText("ログイン失敗")
                 return
@@ -897,7 +897,7 @@ class FureaiApp(QMainWindow):
                 fureai = FureaiNet()
 
                 # ログイン
-                if not fureai.login(acc['id'], acc['password']):
+                if not fureai.login(acc['id'], acc['password'], acc.get('security', '')):
                     results.append(f"✗ {acc['nickname']} - ログイン失敗")
                     continue
 
