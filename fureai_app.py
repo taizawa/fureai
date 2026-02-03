@@ -934,10 +934,12 @@ class FureaiApp(QMainWindow):
                             elif result == 'error':
                                 results.append(f"△ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - スキップ（上限等）")
                             else:
-                                results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - エラー")
+                                error_detail = fureai.last_error[:100] if fureai.last_error else "不明なエラー"
+                                results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - {error_detail}")
 
                     except Exception as e:
-                        results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - {e}")
+                        error_detail = fureai.last_error[:100] if hasattr(fureai, 'last_error') and fureai.last_error else str(e)
+                        results.append(f"✗ {acc['nickname']}: {app['facility']} {app['month']}/{app['day']} - {error_detail}")
 
             result_msg = "実行結果:\n\n" + "\n".join(results)
             QMessageBox.information(self, "完了", result_msg)

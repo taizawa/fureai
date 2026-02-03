@@ -19,6 +19,14 @@ class FureaiNet:
             'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15'
         })
         self.current_url = BASE_URL
+        self.last_error = ""  # エラー詳細を保存
+
+    def _set_error(self, message):
+        """エラー情報を設定"""
+        page_text = self.soup.get_text()[:500] if hasattr(self, 'soup') and self.soup else ""
+        self.last_error = f"{message}\n\nURL: {self.current_url}\n\nページ内容:\n{page_text}"
+        print(f"  → {message}")
+        print(f"  → URL: {self.current_url}")
 
     def _get_soup(self, response):
         """レスポンスをBeautifulSoupでパース"""
@@ -130,7 +138,7 @@ class FureaiNet:
         print(f"[3] 地域選択: {area_name}")
         response = self._click_link(self.soup, area_name)
         if not response:
-            print(f"  → {area_name}が見つかりません")
+            self._set_error(f"{area_name}が見つかりません")
             return False
         self.soup = self._get_soup(response)
         return True
@@ -140,7 +148,7 @@ class FureaiNet:
         print(f"[4] グループ選択: {group_name}")
         response = self._click_link(self.soup, group_name)
         if not response:
-            print(f"  → {group_name}が見つかりません")
+            self._set_error(f"{group_name}が見つかりません")
             return False
         self.soup = self._get_soup(response)
         return True
@@ -150,7 +158,7 @@ class FureaiNet:
         print(f"[5] 館選択: {place_name}")
         response = self._click_link(self.soup, place_name)
         if not response:
-            print(f"  → {place_name}が見つかりません")
+            self._set_error(f"{place_name}が見つかりません")
             return False
         self.soup = self._get_soup(response)
         return True
@@ -160,7 +168,7 @@ class FureaiNet:
         print(f"[6] 施設選択: {facility_name}")
         response = self._click_link(self.soup, facility_name)
         if not response:
-            print(f"  → {facility_name}が見つかりません")
+            self._set_error(f"{facility_name}が見つかりません")
             return False
         self.soup = self._get_soup(response)
         return True
@@ -171,7 +179,7 @@ class FureaiNet:
 
         form = self.soup.find('form')
         if not form:
-            print("  → フォームが見つかりません")
+            self._set_error("日付選択フォームが見つかりません")
             return False
 
         action = urljoin(self.current_url, form.get('action', ''))
@@ -202,7 +210,7 @@ class FureaiNet:
         # フォーム構造を確認
         form = self.soup.find('form')
         if not form:
-            print("  → フォームが見つかりません")
+            self._set_error("申込フォームが見つかりません")
             return False
 
         action = urljoin(self.current_url, form.get('action', ''))
@@ -261,7 +269,7 @@ class FureaiNet:
 
         form = self.soup.find('form')
         if not form:
-            print("  → フォームが見つかりません")
+            self._set_error("申込実行フォームが見つかりません")
             return 'fatal'
 
         action = urljoin(self.current_url, form.get('action', ''))
