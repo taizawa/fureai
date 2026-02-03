@@ -262,6 +262,8 @@ class FureaiNet:
             if '空きがありません' in page_text:
                 error_msg = "空きがありません（当選可能数が0）"
             self._set_error(error_msg)
+            # エラー後にTOPに戻る（次の申し込みのため）
+            self._go_to_top()
             return False
 
         print("  → 確認画面へ進みました")
@@ -343,6 +345,15 @@ class FureaiNet:
 
         # 「TOP画面へ」をクリックしてメインメニューに戻る
         response = self._click_link(self.soup, 'TOP画面へ')
+        if response:
+            self.soup = self._get_soup(response)
+
+    def _go_to_top(self):
+        """メインメニュー（TOP画面）に戻る"""
+        # 「もどる」または「TOP画面へ」リンクを探す
+        response = self._click_link(self.soup, 'TOP画面へ')
+        if not response:
+            response = self._click_link(self.soup, 'もどる')
         if response:
             self.soup = self._get_soup(response)
 
