@@ -152,6 +152,28 @@ python3 build.py
 
 ## トラブルシューティング
 
+### Windows: 「No module named 'PyQt5'」エラー
+
+複数のPythonがインストールされている場合、pipでインストールしたパッケージが別のPythonに入っている可能性があります。
+
+**確認方法：**
+```cmd
+where python
+pip show PyQt5
+```
+
+Location（PyQt5のインストール先）とpythonのパスが異なる場合、`py`コマンドでバージョンを指定：
+
+```cmd
+py -3.13 -m pip install pyinstaller requests beautifulsoup4 openpyxl PyQt5
+py -3.13 fureai_app.py
+py -3.13 build.py
+```
+
+※ `-3.13`の部分はPyQt5がインストールされているPythonのバージョンに合わせてください。
+
+---
+
 ### ログインに失敗する
 
 - ユーザーID、パスワードが正しいか確認
